@@ -1,8 +1,15 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'package:flutter/material.dart';
-import 'package:persian_datetime_picker/persian_datetime_picker.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
+import 'package:get/get.dart';
+import 'package:get/get_connect/http/src/utils/utils.dart';
+import 'package:persian_datetime_picker/persian_datetime_picker.dart';
 import 'package:toggle_switch/toggle_switch.dart';
+
+import 'package:modiriat_check/db/pardakhti_db.dart';
+import 'package:modiriat_check/model/model_chek.dart';
+
+import '../../controller/cheque_controller.dart';
 
 class DesktopBody extends StatefulWidget {
   const DesktopBody({super.key});
@@ -14,18 +21,20 @@ class DesktopBody extends StatefulWidget {
 class _DesktopBodyState extends State<DesktopBody> {
   // get date and convert to jalali
   Jalali j = Jalali.now();
-  //switch 0=no notfication , 1=6hour notif , 2 = 24hour notif
-  int switchYadavari = 0;
-  //controllers
-  TextEditingController? controllerSerial;
-  TextEditingController? controllerTarikh;
-  TextEditingController? controllerMablagh;
-  static TextEditingController controllerBank = TextEditingController(text: '');
-  TextEditingController? controllerPardakhtkonande;
-  TextEditingController? controllerPhone;
+
+  //database
+  final ChequeController _chequeController = Get.put(ChequeController());
+  static List<Cheque?>? cheque;
+
+  static bool isLoading = false;
+
+  readallcheques() async {
+    await _chequeController.getCheque();
+  }
 
   @override
   void initState() {
+    readallcheques();
     super.initState();
   }
 
@@ -37,113 +46,12 @@ class _DesktopBodyState extends State<DesktopBody> {
             FloatingActionButtonLocation.miniStartFloat,
         floatingActionButton: FloatingActionButton(
           child: const Icon(Icons.add),
-          onPressed: () {
-            showDialog(
+          onPressed: () async {
+            await showDialog(
               context: context,
               builder: (BuildContext context) => Directionality(
                 textDirection: TextDirection.rtl,
-                child: AlertDialog(
-                  backgroundColor: Colors.deepPurple,
-                  contentPadding: EdgeInsets.all(0),
-                  content: Builder(
-                    builder: (context) {
-                      var height = MediaQuery.of(context).size.height;
-                      var width = MediaQuery.of(context).size.width;
-
-                      return Container(
-                        // should change on mobile view - make errors
-                        width: width - 400,
-                        height: height - 300,
-                        child: Column(
-                          children: [
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(5),
-                                    ),
-                                    alignment: Alignment.center,
-                                    padding: EdgeInsets.all(8),
-                                    child: Text(
-                                      'ثبت چک پرداختی',
-                                      style: TextStyle(color: Colors.white),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            Expanded(
-                              child: Container(
-                                color: Colors.white,
-                                padding: EdgeInsets.all(15),
-                                child: Container(
-                                  padding: EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(5),
-                                    border: Border.all(
-                                        color: Colors.grey, width: 2),
-                                  ),
-                                  child: SingleChildScrollView(
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        RowOfAlertDialogTarikh(
-                                            text: 'تاریخ چک',
-                                            hinttext: 'تاریخ چک',
-                                            controller: controllerTarikh),
-                                        RowOfAlertDialog(
-                                          text: 'سریال چک',
-                                          hinttext: 'سریال چک',
-                                          controller: controllerSerial,
-                                        ),
-                                        RowOfAlertDialog(
-                                          text: 'مبلغ چک',
-                                          hinttext: 'مبلغ چک',
-                                          controller: controllerMablagh,
-                                        ),
-                                        RowOfAlertDialogBankName(
-                                          text: 'بانک',
-                                          hinttext: 'بانک',
-                                          controller: controllerBank,
-                                        ),
-                                        RowOfAlertDialog(
-                                          text: 'پرداخت کننده',
-                                          hinttext: 'پرداخت کننده',
-                                          controller: controllerPardakhtkonande,
-                                        ),
-                                        RowOfAlertDialog(
-                                          text: 'تلفن',
-                                          hinttext: 'تلفن',
-                                          controller: controllerPhone,
-                                        ),
-                                        RowOfAlertDialogYadavari(
-                                            text: 'یاددآوری',
-                                            switchYadavari: switchYadavari)
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            )
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                  actions: <Widget>[
-                    ElevatedButton(
-                      onPressed: () => Navigator.pop(context, 'Cancel'),
-                      child: const Text('Cancel'),
-                    ),
-                    ElevatedButton(
-                      onPressed: () => Navigator.pop(context, 'OK'),
-                      child: const Text('OK'),
-                    ),
-                  ],
-                ),
+                child: AlertDialogPardakhti(),
               ),
             );
           },
@@ -185,17 +93,21 @@ class RowOfAlertDialog extends StatelessWidget {
   final String text;
   final String hinttext;
   final TextEditingController? controller;
-  const RowOfAlertDialog({
-    Key? key,
-    required this.text,
-    required this.hinttext,
-    required this.controller,
-  }) : super(key: key);
+  final bool validation;
+  final bool enabled;
+  const RowOfAlertDialog(
+      {Key? key,
+      required this.text,
+      required this.hinttext,
+      required this.controller,
+      this.validation = false,
+      this.enabled = true})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: EdgeInsets.only(bottom: 5),
+      margin: const EdgeInsets.only(bottom: 5),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
@@ -203,6 +115,18 @@ class RowOfAlertDialog extends StatelessWidget {
           Expanded(
             flex: 2,
             child: TextFormField(
+              enabled: enabled,
+              validator: (value) {
+                if (validation == true) {
+                  if (value == null) {
+                    return '* الزامی ';
+                  } else {
+                    return null;
+                  }
+                } else {
+                  return null;
+                }
+              },
               controller: controller,
               decoration: InputDecoration(
                   hintText: hinttext,
@@ -321,7 +245,7 @@ class _RowOfAlertDialogBankNameState extends State<RowOfAlertDialogBankName> {
 class RowOfAlertDialogTarikh extends StatefulWidget {
   final String text;
   final String hinttext;
-  final TextEditingController? controller;
+  final TextEditingController controller;
   const RowOfAlertDialogTarikh({
     Key? key,
     required this.text,
@@ -335,8 +259,6 @@ class RowOfAlertDialogTarikh extends StatefulWidget {
 
 class _RowOfAlertDialogTarikhState extends State<RowOfAlertDialogTarikh> {
   //date that users input
-  TextEditingController? selectedDate =
-      TextEditingController(text: Jalali.now().formatFullDate());
 
   @override
   Widget build(BuildContext context) {
@@ -371,14 +293,14 @@ class _RowOfAlertDialogTarikhState extends State<RowOfAlertDialogTarikh> {
                         );
                       });
                   if (picked != null &&
-                      picked.toString() != selectedDate!.text) {
+                      picked.toString() != widget.controller.text) {
                     setState(() {
-                      selectedDate!.text = picked.formatFullDate();
+                      widget.controller.text = picked.formatFullDate();
                     });
                   }
                 },
                 child: TextFormField(
-                    controller: selectedDate,
+                    controller: widget.controller,
                     enabled: false,
                     style: const TextStyle(color: Colors.white),
                     decoration: const InputDecoration(
@@ -400,7 +322,7 @@ class MainContainer extends StatefulWidget {
 
 class _MainContainerState extends State<MainContainer> {
   List bodyitems = <Widget>[
-    const PardakhtiContainer(),
+    PardakhtiContainer(),
     const Text('item2'),
     const Text('item3'),
   ];
@@ -444,7 +366,8 @@ class _MainContainerState extends State<MainContainer> {
 }
 
 class PardakhtiContainer extends StatelessWidget {
-  const PardakhtiContainer({
+  final ChequeController _chequeController = Get.find<ChequeController>();
+  PardakhtiContainer({
     Key? key,
   }) : super(key: key);
 
@@ -457,75 +380,560 @@ class PardakhtiContainer extends StatelessWidget {
         decoration: BoxDecoration(
             border: Border.all(color: Colors.grey, width: 3),
             borderRadius: BorderRadius.circular(5)),
-        child: ListView.builder(
-          itemCount: 10,
-          itemBuilder: (context, index) {
-            return Column(
-              children: [
-                Container(
-                  padding: const EdgeInsets.fromLTRB(14, 8, 14, 8),
-                  decoration: BoxDecoration(
-                    color: Colors.lightBlue[200],
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: const [
-                            Text('سریال چک'),
-                            SizedBox(
-                              height: 5,
-                            ),
-                            Text('مبلغ چک'),
-                            SizedBox(
-                              height: 5,
-                            ),
-                            Text('اسم شخص'),
-                            SizedBox(
-                              height: 10,
-                            ),
-                          ],
-                        ),
-                      ),
-                      Expanded(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: const [
-                            Text('لوگوبانک-نام بانک'),
-                            SizedBox(
-                              height: 5,
-                            ),
-                            Text('تاریخ چک'),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        height: 2,
-                        decoration: BoxDecoration(
-                          color: Colors.lightBlue[200],
-                        ),
-                        child: Container(
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ),
-                  ],
-                )
-              ],
-            );
+        child: FutureBuilder(
+          future: BankDataBase.instance.readAllCheque(),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            return _DesktopBodyState.isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _chequeController.chequelist.isEmpty
+                    ? const Center(child: Text('چکی ثبت نشده!'))
+                    : Obx(
+                        (() => ListView.builder(
+                              itemCount: _chequeController.chequelist
+                                  .where(
+                                      (element) => element!.type == 'pardakhti')
+                                  .length,
+                              itemBuilder: (context, index) {
+                                //for show results by order of dates
+                                final reversedIndex = _chequeController
+                                        .chequelist
+                                        .where((element) =>
+                                            element!.type == 'pardakhti')
+                                        .length -
+                                    index -
+                                    1;
+
+                                return InkWell(
+                                  onTap: (() async {
+                                    await showDialog(
+                                      context: context,
+                                      builder: (context) => Directionality(
+                                          textDirection: TextDirection.rtl,
+                                          child: AlertDialogPardakhtiEdit(
+                                            serialnum: _chequeController
+                                                .chequelist
+                                                .where((element) =>
+                                                    element!.type ==
+                                                    'pardakhti')
+                                                .elementAt(reversedIndex)!
+                                                .serial
+                                                .toString(),
+                                            bankname: _chequeController
+                                                .chequelist
+                                                .where((element) =>
+                                                    element!.type ==
+                                                    'pardakhti')
+                                                .elementAt(reversedIndex)!
+                                                .bankname
+                                                .toString(),
+                                            mablagh: _chequeController
+                                                .chequelist
+                                                .where((element) =>
+                                                    element!.type ==
+                                                    'pardakhti')
+                                                .elementAt(reversedIndex)!
+                                                .mablagh
+                                                .toString(),
+                                            pardakhtkonande: _chequeController
+                                                .chequelist
+                                                .where((element) =>
+                                                    element!.type ==
+                                                    'pardakhti')
+                                                .elementAt(reversedIndex)!
+                                                .pardakhtkonande
+                                                .toString(),
+                                            phone: _chequeController.chequelist
+                                                .where((element) =>
+                                                    element!.type ==
+                                                    'pardakhti')
+                                                .elementAt(reversedIndex)!
+                                                .phonenumber
+                                                .toString(),
+                                            tarikh: _chequeController.chequelist
+                                                .where((element) =>
+                                                    element!.type ==
+                                                    'pardakhti')
+                                                .elementAt(reversedIndex)!
+                                                .tarikh
+                                                .toString(),
+                                            tozihat: _chequeController
+                                                .chequelist
+                                                .where((element) =>
+                                                    element!.type ==
+                                                    'pardakhti')
+                                                .elementAt(reversedIndex)!
+                                                .tozihat
+                                                .toString(),
+                                          )),
+                                    );
+                                  }),
+                                  child: Column(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.fromLTRB(
+                                            28, 8, 28, 8),
+                                        decoration: BoxDecoration(
+                                          color: Colors.lightBlue[200],
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            Expanded(
+                                              child: Column(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(_chequeController
+                                                      .chequelist
+                                                      .where((element) =>
+                                                          element!.type ==
+                                                          'pardakhti')
+                                                      .elementAt(reversedIndex)!
+                                                      .serial
+                                                      .toString()),
+                                                  const SizedBox(
+                                                    height: 5,
+                                                  ),
+                                                  Text(_chequeController
+                                                      .chequelist
+                                                      .where((element) =>
+                                                          element!.type ==
+                                                          'pardakhti')
+                                                      .elementAt(reversedIndex)!
+                                                      .mablagh
+                                                      .toString()),
+                                                  const SizedBox(
+                                                    height: 5,
+                                                  ),
+                                                  Text(_chequeController
+                                                      .chequelist
+                                                      .where((element) =>
+                                                          element!.type ==
+                                                          'pardakhti')
+                                                      .elementAt(reversedIndex)!
+                                                      .pardakhtkonande
+                                                      .toString()),
+                                                  const SizedBox(
+                                                    height: 5,
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            Expanded(
+                                              child: Column(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.end,
+                                                children: [
+                                                  Text(_chequeController
+                                                      .chequelist
+                                                      .where((element) =>
+                                                          element!.type ==
+                                                          'pardakhti')
+                                                      .elementAt(reversedIndex)!
+                                                      .tarikh
+                                                      .toString()),
+                                                  const SizedBox(
+                                                    height: 15,
+                                                  ),
+                                                  Text(_chequeController
+                                                      .chequelist
+                                                      .where((element) =>
+                                                          element!.type ==
+                                                          'pardakhti')
+                                                      .elementAt(reversedIndex)!
+                                                      .bankname
+                                                      .toString()),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 16),
+                                              height: 2,
+                                              decoration: BoxDecoration(
+                                                color: Colors.lightBlue[200],
+                                              ),
+                                              child: Container(
+                                                color: Colors.grey,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      )
+                                    ],
+                                  ),
+                                );
+                              },
+                            )),
+                      );
           },
         ),
       ),
     );
   }
+}
+
+class AlertDialogPardakhti extends StatelessWidget {
+  final ChequeController _chequeController = Get.find<ChequeController>();
+  saveDatatoDataBasePardakhti() async {
+    final cheque = Cheque(
+      serial: int.parse(controllerSerial.text),
+      mablagh: int.parse(controllerMablagh.text),
+      bankname: controllerBank.text,
+      pardakhtkonande: controllerPardakhtkonande.text,
+      tarikh: controllerTarikh.text,
+      tozihat: controllerTozihat.text,
+      type: 'pardakhti',
+      phonenumber: controllerPhone.text,
+    );
+    await _chequeController.addCheque(cheque);
+  }
+
+  int isSerialRepeated() {
+    int i = 0;
+    for (i; i < _chequeController.chequelist.length; i++) {
+      //data jadid vared nashode va bayad Update shavad
+      if (controllerSerial.text ==
+          _chequeController.chequelist[i]!.serial.toString()) {
+        return 0;
+      }
+    }
+    return 1;
+  }
+
+  //switch 0=no notfication , 1=6hour notif , 2 = 24hour notif
+  int switchYadavari = 0;
+  //controllers
+  TextEditingController controllerSerial = TextEditingController(text: '');
+  TextEditingController controllerTarikh =
+      TextEditingController(text: Jalali.now().formatFullDate());
+  TextEditingController controllerMablagh = TextEditingController(text: '');
+  static TextEditingController controllerBank = TextEditingController(text: '');
+  TextEditingController controllerPardakhtkonande =
+      TextEditingController(text: '');
+  TextEditingController controllerPhone = TextEditingController(text: '');
+  TextEditingController controllerTozihat = TextEditingController(text: '');
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: Colors.deepPurple,
+      contentPadding: const EdgeInsets.all(0),
+      content: Builder(
+        builder: (context) {
+          var height = MediaQuery.of(context).size.height;
+          var width = MediaQuery.of(context).size.width;
+
+          return Container(
+            // should change on mobile view - make errors
+            width: width - 400,
+            height: height - 300,
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(5),
+                        ),
+                        alignment: Alignment.center,
+                        padding: const EdgeInsets.all(8),
+                        child: const Text(
+                          'ثبت چک پرداختی',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                Expanded(
+                  child: Container(
+                    color: Colors.white,
+                    padding: const EdgeInsets.all(15),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(5),
+                        border: Border.all(color: Colors.grey, width: 2),
+                      ),
+                      child: SingleChildScrollView(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            RowOfAlertDialogTarikh(
+                                text: 'تاریخ چک',
+                                hinttext: 'تاریخ چک',
+                                controller: controllerTarikh),
+                            RowOfAlertDialog(
+                              text: 'سریال چک',
+                              hinttext: 'سریال چک',
+                              controller: controllerSerial,
+                              validation: true,
+                            ),
+                            RowOfAlertDialog(
+                              text: 'مبلغ چک',
+                              hinttext: 'مبلغ چک',
+                              controller: controllerMablagh,
+                              validation: true,
+                            ),
+                            RowOfAlertDialogBankName(
+                              text: 'بانک',
+                              hinttext: 'بانک',
+                              controller: controllerBank,
+                            ),
+                            RowOfAlertDialog(
+                              text: 'پرداخت کننده',
+                              hinttext: 'پرداخت کننده',
+                              controller: controllerPardakhtkonande,
+                              validation: true,
+                            ),
+                            RowOfAlertDialog(
+                              text: 'تلفن',
+                              hinttext: 'تلفن',
+                              controller: controllerPhone,
+                            ),
+                            RowOfAlertDialogYadavari(
+                                text: 'یاددآوری',
+                                switchYadavari: switchYadavari)
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                )
+              ],
+            ),
+          );
+        },
+      ),
+      actions: <Widget>[
+        ElevatedButton(
+          onPressed: () => Navigator.pop(context, 'Cancel'),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            if (isSerialRepeated() == 1) {
+              saveDatatoDataBasePardakhti();
+              Navigator.pop(context);
+            }
+          },
+          child: const Text('OK'),
+        ),
+      ],
+    );
+  }
+}
+
+class AlertDialogPardakhtiEdit extends StatefulWidget {
+  String serialnum;
+  String mablagh;
+  String bankname;
+  String pardakhtkonande;
+  String tarikh;
+  String tozihat;
+  String phone;
+
+  AlertDialogPardakhtiEdit({
+    Key? key,
+    required this.serialnum,
+    required this.mablagh,
+    required this.bankname,
+    required this.pardakhtkonande,
+    required this.tarikh,
+    required this.tozihat,
+    required this.phone,
+  }) : super(key: key);
+
+  @override
+  State<AlertDialogPardakhtiEdit> createState() =>
+      _AlertDialogPardakhtiEditState();
+}
+
+class _AlertDialogPardakhtiEditState extends State<AlertDialogPardakhtiEdit> {
+  final ChequeController _chequeController = Get.find<ChequeController>();
+
+  updateDatatoDataBasePardakhti() async {
+    final cheque = Cheque(
+      serial: int.parse(controllerSerial.text),
+      mablagh: int.parse(controllerMablagh.text),
+      bankname: controllerBank.text,
+      pardakhtkonande: controllerPardakhtkonande.text,
+      tarikh: controllerTarikh.text,
+      tozihat: controllerTozihat.text,
+      type: 'pardakhti',
+      phonenumber: controllerPhone.text,
+    );
+    await _chequeController.updateCheque(cheque);
+  }
+
+  //switch 0=no notfication , 1=6hour notif , 2 = 24hour notif
+  int switchYadavari = 0;
+
+  //controllers
+  TextEditingController controllerSerial = TextEditingController(text: '');
+
+  TextEditingController controllerTarikh =
+      TextEditingController(text: Jalali.now().formatFullDate());
+
+  TextEditingController controllerMablagh = TextEditingController(text: '');
+
+  TextEditingController controllerPardakhtkonande =
+      TextEditingController(text: '');
+
+  TextEditingController controllerPhone = TextEditingController(text: '');
+  TextEditingController controllerBank = TextEditingController(text: '');
+
+  TextEditingController controllerTozihat = TextEditingController(text: '');
+
+  @override
+  void initState() {
+    controllerSerial.text = widget.serialnum;
+    controllerMablagh.text = widget.mablagh;
+    controllerPardakhtkonande.text = widget.pardakhtkonande;
+    controllerTarikh.text = widget.tarikh;
+    controllerPhone.text = widget.phone;
+    controllerTozihat.text = widget.tozihat;
+    controllerBank.text = widget.bankname;
+
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: Colors.deepPurple,
+      contentPadding: const EdgeInsets.all(0),
+      content: Builder(
+        builder: (context) {
+          var height = MediaQuery.of(context).size.height;
+          var width = MediaQuery.of(context).size.width;
+
+          return Container(
+            // should change on mobile view - make errors
+            width: width - 400,
+            height: height - 300,
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(5),
+                        ),
+                        alignment: Alignment.center,
+                        padding: const EdgeInsets.all(8),
+                        child: const Text(
+                          'ویرایش چک پرداختی',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                Expanded(
+                  child: Container(
+                    color: Colors.white,
+                    padding: const EdgeInsets.all(15),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(5),
+                        border: Border.all(color: Colors.grey, width: 2),
+                      ),
+                      child: SingleChildScrollView(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            RowOfAlertDialogTarikh(
+                                text: 'تاریخ چک',
+                                hinttext: 'تاریخ چک',
+                                controller: controllerTarikh),
+                            RowOfAlertDialog(
+                              text: 'سریال چک',
+                              hinttext: 'سریال چک',
+                              controller: controllerSerial,
+                              validation: true,
+                              enabled: false,
+                            ),
+                            RowOfAlertDialog(
+                              text: 'مبلغ چک',
+                              hinttext: 'مبلغ چک',
+                              controller: controllerMablagh,
+                              validation: true,
+                            ),
+                            RowOfAlertDialogBankName(
+                              text: 'بانک',
+                              hinttext: 'بانک',
+                              controller: controllerBank,
+                            ),
+                            RowOfAlertDialog(
+                              text: 'پرداخت کننده',
+                              hinttext: 'پرداخت کننده',
+                              controller: controllerPardakhtkonande,
+                              validation: true,
+                            ),
+                            RowOfAlertDialog(
+                              text: 'تلفن',
+                              hinttext: 'تلفن',
+                              controller: controllerPhone,
+                            ),
+                            RowOfAlertDialogYadavari(
+                                text: 'یاددآوری',
+                                switchYadavari: switchYadavari)
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                )
+              ],
+            ),
+          );
+        },
+      ),
+      actions: <Widget>[
+        ElevatedButton(
+          onPressed: () {
+            _chequeController.deleteCheque(int.parse(widget.serialnum));
+            Navigator.pop(context);
+          },
+          child: const Text('حذف'),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            updateDatatoDataBasePardakhti();
+            Navigator.pop(context);
+          },
+          child: const Text('OK'),
+        ),
+      ],
+    );
+  }
+}
+
+DefaultTextStyle defaultTextStyle(context, String text) {
+  return DefaultTextStyle(
+    style: Theme.of(context).textTheme.bodyText2!.copyWith(
+          fontWeight: FontWeight.bold,
+        ),
+    child: Text(text),
+  );
 }

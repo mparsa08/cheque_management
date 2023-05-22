@@ -39,6 +39,8 @@ dependencies:
   persian_datetime_picker: ^2.6.0
   flutter_typeahead: ^3.2.0
   toggle_switch: ^2.1.0
+  sqflite_common_ffi: ^2.2.5
+  get: ^4.6.5
 
 dev_dependencies:
   flutter_test:
