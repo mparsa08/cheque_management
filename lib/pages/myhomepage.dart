@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import './responsive/responsive.dart';
 import './responsive/mobilebody.dart';
-import './responsive/desktopbody.dart';
+import './responsive/desktopbody/desktopbody.dart';
 
 class MyHomePage extends StatelessWidget {
   const MyHomePage({super.key});
