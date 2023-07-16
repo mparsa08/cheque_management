@@ -1,16 +1,15 @@
-# modiriat_check
+# cheque_management
 
-A new Flutter project.
 
-## Getting Started
 
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+ثبت چک های دریافتی و پرداختی نمایش یادآوری سررسید چک ها
+اگر شما هم زمان سررسید چک و اطلاعات مربوط به چکهایتان را فراموش می کنید، می توانید از این برنامه استفاده نمایید.
+امکانات برنامه :
+- امکان ثبت چک های دریافتی و پرداختی
+- نمایش هشدار سررسید زمانی چک ها
+- امکان جستجو بین چک های ثبت شده
+- امکان ثبت پاس شدن، برگشت و خرج چک
+- امکان بایگانی چک ها
+- امکان تنظیم زمان یادآوری 
+- گزارشات نموداری
+- راس گیری چک
