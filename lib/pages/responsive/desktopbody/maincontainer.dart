@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:modiriat_check/pages/responsive/desktopbody/daryafticontainer.dart';
+import 'package:modiriat_check/pages/responsive/desktopbody/homecontainer.dart';
 
 import 'pardakhticontainer.dart';
 
@@ -12,8 +14,8 @@ class MainContainer extends StatefulWidget {
 class _MainContainerState extends State<MainContainer> {
   List bodyitems = <Widget>[
     PardakhtiContainer(),
-    const Text('item2'),
-    const Text('item3'),
+    homecontainer(),
+    DaryaftiContainer(),
   ];
   int selectedIndex = 0;
   void _onItemTapped(int index) {

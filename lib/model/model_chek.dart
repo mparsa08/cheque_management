@@ -9,17 +9,18 @@ class Cheque {
   final String type;
   final String? tozihat;
   final String tarikh;
+  final String? ispaid;
 
-  const Cheque({
-    required this.serial,
-    required this.mablagh,
-    required this.bankname,
-    required this.pardakhtkonande,
-    this.phonenumber,
-    required this.type,
-    this.tozihat,
-    required this.tarikh,
-  });
+  const Cheque(
+      {required this.serial,
+      required this.mablagh,
+      required this.bankname,
+      required this.pardakhtkonande,
+      this.phonenumber,
+      required this.type,
+      this.tozihat,
+      required this.tarikh,
+      this.ispaid});
 
   Cheque copy({
     int? serial,
@@ -30,6 +31,7 @@ class Cheque {
     String? type,
     String? tozihat,
     String? tarikh,
+    String? ispaid,
   }) =>
       Cheque(
         serial: serial ?? this.serial,
@@ -40,6 +42,7 @@ class Cheque {
         type: type ?? this.type,
         tozihat: tozihat ?? this.tozihat,
         tarikh: tarikh ?? this.tarikh,
+        ispaid: ispaid ?? this.ispaid,
       );
 
   static Cheque fromJson(Map<String, Object?> json) => Cheque(
@@ -51,6 +54,7 @@ class Cheque {
         type: json['type'] as String,
         tozihat: json['tozihat'] as String?,
         tarikh: json['tarikh'] as String,
+        ispaid: json['ispaid'] as String?,
       );
 
   Map<String, Object?> toJson() => {
@@ -62,6 +66,7 @@ class Cheque {
         'type': type,
         'tozihat': tozihat,
         'tarikh': tarikh,
+        'ispaid': ispaid,
       };
 }
 
@@ -75,6 +80,7 @@ class ChequeFields {
     type,
     tozihat,
     tarikh,
+    ispaid,
   ];
 
   static const String serial = 'serial';
@@ -85,4 +91,5 @@ class ChequeFields {
   static const String type = 'type';
   static const String tozihat = 'tozihat';
   static const String tarikh = 'tarikh';
+  static const String ispaid = 'ispaid';
 }

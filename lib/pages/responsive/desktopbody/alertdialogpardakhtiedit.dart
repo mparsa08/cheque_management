@@ -10,6 +10,7 @@ import 'rowofalertdialogs/road_tarikh.dart';
 import 'rowofalertdialogs/road_yadavari.dart';
 
 class AlertDialogPardakhtiEdit extends StatefulWidget {
+  String title;
   String serialnum;
   String mablagh;
   String bankname;
@@ -17,9 +18,11 @@ class AlertDialogPardakhtiEdit extends StatefulWidget {
   String tarikh;
   String tozihat;
   String phone;
+  String ispaid;
 
   AlertDialogPardakhtiEdit({
     Key? key,
+    required this.title,
     required this.serialnum,
     required this.mablagh,
     required this.bankname,
@@ -27,6 +30,7 @@ class AlertDialogPardakhtiEdit extends StatefulWidget {
     required this.tarikh,
     required this.tozihat,
     required this.phone,
+    required this.ispaid,
   }) : super(key: key);
 
   @override
@@ -37,7 +41,29 @@ class AlertDialogPardakhtiEdit extends StatefulWidget {
 class _AlertDialogPardakhtiEditState extends State<AlertDialogPardakhtiEdit> {
   final ChequeController _chequeController = Get.find<ChequeController>();
 
+  checktitle() {
+    if (widget.title == 'پرداختی') {
+      updateDatatoDataBasePardakhti();
+    } else if (widget.title == 'دریافتی') {
+      updateDatatoDataBaseDaryafti();
+    }
+  }
+
   updateDatatoDataBasePardakhti() async {
+    final cheque = Cheque(
+        serial: int.parse(controllerSerial.text),
+        mablagh: int.parse(controllerMablagh.text),
+        bankname: controllerBank.text,
+        pardakhtkonande: controllerPardakhtkonande.text,
+        tarikh: controllerTarikh.text,
+        tozihat: controllerTozihat.text,
+        type: 'pardakhti',
+        phonenumber: controllerPhone.text,
+        ispaid: widget.ispaid);
+    await _chequeController.updateCheque(cheque);
+  }
+
+  updateDatatoDataBaseDaryafti() async {
     final cheque = Cheque(
       serial: int.parse(controllerSerial.text),
       mablagh: int.parse(controllerMablagh.text),
@@ -45,8 +71,9 @@ class _AlertDialogPardakhtiEditState extends State<AlertDialogPardakhtiEdit> {
       pardakhtkonande: controllerPardakhtkonande.text,
       tarikh: controllerTarikh.text,
       tozihat: controllerTozihat.text,
-      type: 'pardakhti',
+      type: 'daryafti',
       phonenumber: controllerPhone.text,
+      ispaid: widget.ispaid,
     );
     await _chequeController.updateCheque(cheque);
   }
@@ -85,115 +112,118 @@ class _AlertDialogPardakhtiEditState extends State<AlertDialogPardakhtiEdit> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      backgroundColor: Colors.deepPurple,
-      contentPadding: const EdgeInsets.all(0),
-      content: Builder(
-        builder: (context) {
-          var height = MediaQuery.of(context).size.height;
-          var width = MediaQuery.of(context).size.width;
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: AlertDialog(
+        backgroundColor: Colors.deepPurple,
+        contentPadding: const EdgeInsets.all(0),
+        content: Builder(
+          builder: (context) {
+            var height = MediaQuery.of(context).size.height;
+            var width = MediaQuery.of(context).size.width;
 
-          return SizedBox(
-            // should change on mobile view - make errors
-            width: width - 400,
-            height: height - 300,
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(5),
-                        ),
-                        alignment: Alignment.center,
-                        padding: const EdgeInsets.all(8),
-                        child: const Text(
-                          'ویرایش چک پرداختی',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                Expanded(
-                  child: Container(
-                    color: Colors.white,
-                    padding: const EdgeInsets.all(15),
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(5),
-                        border: Border.all(color: Colors.grey, width: 2),
-                      ),
-                      child: SingleChildScrollView(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            RowOfAlertDialogTarikh(
-                                text: 'تاریخ چک',
-                                hinttext: 'تاریخ چک',
-                                controller: controllerTarikh),
-                            RowOfAlertDialog(
-                              text: 'سریال چک',
-                              hinttext: 'سریال چک',
-                              controller: controllerSerial,
-                              validation: true,
-                              enabled: false,
-                            ),
-                            RowOfAlertDialog(
-                              text: 'مبلغ چک',
-                              hinttext: 'مبلغ چک',
-                              controller: controllerMablagh,
-                              validation: true,
-                            ),
-                            RowOfAlertDialogBankName(
-                              text: 'بانک',
-                              hinttext: 'بانک',
-                              controller: controllerBank,
-                            ),
-                            RowOfAlertDialog(
-                              text: 'پرداخت کننده',
-                              hinttext: 'پرداخت کننده',
-                              controller: controllerPardakhtkonande,
-                              validation: true,
-                            ),
-                            RowOfAlertDialog(
-                              text: 'تلفن',
-                              hinttext: 'تلفن',
-                              controller: controllerPhone,
-                            ),
-                            RowOfAlertDialogYadavari(
-                                text: 'یاددآوری',
-                                switchYadavari: switchYadavari)
-                          ],
+            return SizedBox(
+              // should change on mobile view - make errors
+              width: width - 400,
+              height: height - 300,
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(5),
+                          ),
+                          alignment: Alignment.center,
+                          padding: const EdgeInsets.all(8),
+                          child: Text(
+                            'ویرایش چک ${widget.title}',
+                            textDirection: TextDirection.rtl,
+                            style: const TextStyle(color: Colors.white),
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ),
-                )
-              ],
-            ),
-          );
-        },
+                  Expanded(
+                    child: Container(
+                      color: Colors.white,
+                      padding: const EdgeInsets.all(15),
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(5),
+                          border: Border.all(color: Colors.grey, width: 2),
+                        ),
+                        child: SingleChildScrollView(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              RowOfAlertDialogTarikh(
+                                  text: 'تاریخ چک',
+                                  hinttext: 'تاریخ چک',
+                                  controller: controllerTarikh),
+                              RowOfAlertDialog(
+                                text: 'سریال چک',
+                                hinttext: 'سریال چک',
+                                controller: controllerSerial,
+                                validation: true,
+                                enabled: false,
+                              ),
+                              RowOfAlertDialog(
+                                text: 'مبلغ چک',
+                                hinttext: 'مبلغ چک',
+                                controller: controllerMablagh,
+                                validation: true,
+                              ),
+                              RowOfAlertDialogBankName(
+                                text: 'بانک',
+                                hinttext: 'بانک',
+                                controller: controllerBank,
+                              ),
+                              RowOfAlertDialog(
+                                text: 'پرداخت کننده',
+                                hinttext: 'پرداخت کننده',
+                                controller: controllerPardakhtkonande,
+                                validation: true,
+                              ),
+                              RowOfAlertDialog(
+                                text: 'تلفن',
+                                hinttext: 'تلفن',
+                                controller: controllerPhone,
+                              ),
+                              RowOfAlertDialogYadavari(
+                                  text: 'یاددآوری',
+                                  switchYadavari: switchYadavari)
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  )
+                ],
+              ),
+            );
+          },
+        ),
+        actions: <Widget>[
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            child: const Text('لغو'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              checktitle();
+              Navigator.pop(context);
+            },
+            child: const Text('ثبت'),
+          ),
+        ],
       ),
-      actions: <Widget>[
-        ElevatedButton(
-          onPressed: () {
-            _chequeController.deleteCheque(int.parse(widget.serialnum));
-            Navigator.pop(context);
-          },
-          child: const Text('حذف'),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            updateDatatoDataBasePardakhti();
-            Navigator.pop(context);
-          },
-          child: const Text('OK'),
-        ),
-      ],
     );
   }
 }

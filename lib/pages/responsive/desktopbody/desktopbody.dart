@@ -2,7 +2,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:persian_datetime_picker/persian_datetime_picker.dart';
-import 'package:modiriat_check/model/model_chek.dart';
 
 import '../../../controller/cheque_controller.dart';
 import 'alertdialogpardakhti.dart';
@@ -38,20 +37,6 @@ class _DesktopBodyState extends State<DesktopBody> {
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
-        floatingActionButtonLocation:
-            FloatingActionButtonLocation.miniStartFloat,
-        floatingActionButton: FloatingActionButton(
-          child: const Icon(Icons.add),
-          onPressed: () async {
-            await showDialog(
-              context: context,
-              builder: (BuildContext context) => Directionality(
-                textDirection: TextDirection.rtl,
-                child: AlertDialogPardakhti(),
-              ),
-            );
-          },
-        ),
         appBar: AppBar(
           title: Align(
             alignment: Alignment.topRight,

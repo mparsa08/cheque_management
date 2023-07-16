@@ -20,6 +20,7 @@ class AlertDialogPardakhti extends StatelessWidget {
       tarikh: controllerTarikh.text,
       tozihat: controllerTozihat.text,
       type: 'pardakhti',
+      ispaid: 'false',
       phonenumber: controllerPhone.text,
     );
     await _chequeController.addCheque(cheque);
@@ -146,7 +147,7 @@ class AlertDialogPardakhti extends StatelessWidget {
       actions: <Widget>[
         ElevatedButton(
           onPressed: () => Navigator.pop(context, 'Cancel'),
-          child: const Text('Cancel'),
+          child: const Text('لغو'),
         ),
         ElevatedButton(
           onPressed: () {
@@ -155,7 +156,7 @@ class AlertDialogPardakhti extends StatelessWidget {
               Navigator.pop(context);
             }
           },
-          child: const Text('OK'),
+          child: const Text('ثبت'),
         ),
       ],
     );

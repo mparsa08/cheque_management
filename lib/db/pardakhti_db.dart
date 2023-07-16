@@ -31,7 +31,8 @@ class BankDataBase {
     phonenumber $textType,
     type $textType,
     tarikh $textType,
-    tozihat $textType
+    tozihat $textType,
+    ispaid $textType
   )
 ''');
   }
